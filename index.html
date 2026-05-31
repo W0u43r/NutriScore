@@ -580,7 +580,7 @@ function stopCamera() {
   document.getElementById('cam-label-text').textContent = 'Camera';
 }
 
-const FIELDS = 'product_name,brands,image_front_small_url,nutrition_grades,nutriments,categories_tags';
+const FIELDS = 'product_name,brands,image_front_small_url,nutrition_grades,nutriscore_grade,nutriscore_score_producer,nutriments,categories_tags';
 const ENDPOINTS = [
   code => `https://world.openfoodfacts.org/api/v2/product/${code}?fields=${FIELDS}`,
   code => `https://world.openfoodfacts.net/api/v2/product/${code}?fields=${FIELDS}`,
@@ -638,17 +638,20 @@ function render(p, code) {
     ? `<img src="${p.image_front_small_url}" class="product-thumb" alt="">`
     : `<div class="product-thumb-placeholder"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>`;
 
-  // Nutri-Score: eerst van OFF, anders zelf berekenen
+  // Nutri-Score prioriteit:
+  // 1. nutriscore_score_producer → fabrikant heeft score aangeleverd (staat op verpakking)
+  // 2. Zelf berekenen via 2023 algoritme
   const n = p.nutriments || {};
-  const offGrade = (p.nutrition_grades || '').toLowerCase();
+  const producerGrade = (p.nutriscore_grade || '').toLowerCase();
+  const hasProducerScore = producerGrade && GRADES[producerGrade] &&
+    p.nutriscore_score_producer != null;
   let grade, sourceLabel, sourceClass;
 
-  if (offGrade && GRADES[offGrade]) {
-    grade = offGrade;
-    sourceLabel = 'Officieel (Open Food Facts)';
+  if (hasProducerScore) {
+    grade = producerGrade;
+    sourceLabel = 'Score van verpakking';
     sourceClass = 'source-off';
   } else {
-    // Zelf berekenen
     const calc = calcNutriScore(n);
     grade = calc.grade;
     sourceLabel = 'Berekend (2023 algoritme)';
