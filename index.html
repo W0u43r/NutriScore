@@ -559,7 +559,7 @@ async function startCamera() {
         lastScan = code; lastScanTime = now;
         document.getElementById('barcode-input').value = code;
         navigator.vibrate && navigator.vibrate(40);
-        lookup();
+        lookup(true);
       }
     });
   } catch(e) {
@@ -580,26 +580,52 @@ function stopCamera() {
   document.getElementById('cam-label-text').textContent = 'Camera';
 }
 
-async function lookup() {
+const FIELDS = 'product_name,brands,image_front_small_url,nutrition_grades,nutriments,categories_tags';
+const ENDPOINTS = [
+  code => `https://world.openfoodfacts.org/api/v2/product/${code}?fields=${FIELDS}`,
+  code => `https://world.openfoodfacts.net/api/v2/product/${code}?fields=${FIELDS}`,
+  code => `https://world.openfoodfacts.org/api/v0/product/${code}.json`,
+];
+
+async function fetchWithTimeout(url, ms = 8000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch(e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
+async function lookup(silent = false) {
   const code = document.getElementById('barcode-input').value.trim().replace(/\D/g,'');
   if (!code) return;
   hideError();
   document.getElementById('result').style.display = 'none';
-  document.getElementById('loading').style.display = 'block';
+  if (!silent) document.getElementById('loading').style.display = 'block';
 
-  try {
-    const res = await fetch(
-      `https://world.openfoodfacts.org/api/v2/product/${code}?fields=product_name,brands,image_front_small_url,nutrition_grades,nutriments,categories_tags`,
-      { headers: { 'User-Agent': 'NutriScoreApp/1.0' } }
-    );
-    const data = await res.json();
-    document.getElementById('loading').style.display = 'none';
-    if (data.status !== 1 || !data.product) { showError('Product niet gevonden. Probeer een ander barcodenummer.'); return; }
-    render(data.product, code);
-  } catch(e) {
-    document.getElementById('loading').style.display = 'none';
-    showError('Verbindingsfout. Controleer je internetverbinding.');
+  let lastErr = null;
+  for (const endpointFn of ENDPOINTS) {
+    try {
+      const data = await fetchWithTimeout(endpointFn(code));
+      document.getElementById('loading').style.display = 'none';
+      if (data.status !== 1 || !data.product) {
+        if (!silent) showError('Product niet gevonden. Probeer een ander barcodenummer.');
+        return;
+      }
+      render(data.product, code);
+      return;
+    } catch(e) {
+      lastErr = e;
+    }
   }
+
+  document.getElementById('loading').style.display = 'none';
+  if (!silent) showError('Kon geen verbinding maken met Open Food Facts. Controleer je internetverbinding en probeer opnieuw.');
 }
 
 function render(p, code) {
