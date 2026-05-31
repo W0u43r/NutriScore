@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<title>Nutri-Score</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --border: #e2e0da;
+    --border-strong: #c8c5bc;
+    --text: #0a0a0a;
+    --text-muted: #6b6860;
+    --text-faint: #a8a59e;
+    --accent: #0a0a0a;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --grade-a: #1d7a4e;
+    --grade-b: #5a9e2f;
+    --grade-c: #d4a017;
+    --grade-d: #d06020;
+    --grade-e: #c0392b;
+    --radius: 16px;
+    --radius-sm: 8px;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    font-family: var(--sans);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  header {
+    padding: 56px 24px 24px;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  h1 {
+    font-family: var(--sans);
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .header-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* Main scroll area */
+  main {
+    flex: 1;
+    padding: 20px 24px 40px;
+    overflow-y: auto;
+  }
+
+  /* Camera section */
+  .cam-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .cam-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .cam-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text-faint);
+    transition: background 0.3s;
+  }
+  .cam-dot.live { background: #2ecc71; animation: blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  #video-wrap {
+    position: relative;
+    background: #0a0a0a;
+    aspect-ratio: 4/3;
+    display: none;
+  }
+
+  #video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .scan-frame {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .scan-frame-inner {
+    width: 65%;
+    aspect-ratio: 3/1;
+    position: relative;
+  }
+
+  .scan-frame-inner::before,
+  .scan-frame-inner::after,
+  .scan-frame-inner span::before,
+  .scan-frame-inner span::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-color: rgba(255,255,255,0.8);
+    border-style: solid;
+  }
+  .scan-frame-inner::before { top: 0; left: 0; border-width: 2px 0 0 2px; }
+  .scan-frame-inner::after { top: 0; right: 0; border-width: 2px 2px 0 0; }
+  .scan-frame-inner span::before { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+  .scan-frame-inner span::after { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+
+  .scan-line {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    height: 1px;
+    background: rgba(255,255,255,0.6);
+    animation: scanline 2s ease-in-out infinite;
+    top: 0;
+  }
+  @keyframes scanline {
+    0% { top: 10%; }
+    50% { top: 90%; }
+    100% { top: 10%; }
+  }
+
+  .cam-placeholder {
+    aspect-ratio: 4/3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 32px;
+  }
+
+  .cam-icon {
+    width: 48px;
+    height: 48px;
+    opacity: 0.15;
+  }
+
+  .cam-placeholder p {
+    font-size: 13px;
+    color: var(--text-faint);
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .cam-btn {
+    width: 100%;
+    padding: 14px 18px;
+    background: var(--text);
+    color: #fff;
+    border: none;
+    border-radius: 0;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cam-btn:active { opacity: 0.75; }
+  .cam-btn.secondary {
+    background: var(--bg);
+    color: var(--text);
+    border-top: 1px solid var(--border);
+  }
+
+  /* Manual input */
+  .manual-section {
+    margin-bottom: 20px;
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .divider span {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  input[type="text"], input[type="number"] {
+    flex: 1;
+    padding: 13px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--text);
+    outline: none;
+    -webkit-appearance: none;
+    transition: border-color 0.15s;
+  }
+  input:focus { border-color: var(--text); }
+  input::placeholder { color: var(--text-faint); }
+
+  .search-btn {
+    padding: 13px 18px;
+    background: var(--text);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .search-btn:active { opacity: 0.75; }
+
+  /* Loading */
+  #loading {
+    display: none;
+    text-align: center;
+    padding: 32px 0;
+  }
+  .loader {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border);
+    border-top-color: var(--text);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading p { font-size: 13px; color: var(--text-faint); font-family: var(--mono); }
+
+  /* Error */
+  #error {
+    display: none;
+    background: #fff5f5;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+  #error p { font-size: 13px; color: #c0392b; line-height: 1.5; }
+
+  /* Result card */
+  #result {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    animation: fadeUp 0.3s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-header {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .product-thumb {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    object-fit: contain;
+    background: var(--bg);
+    flex-shrink: 0;
+  }
+
+  .product-thumb-placeholder {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .product-meta { flex: 1; min-width: 0; }
+
+  .product-barcode {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-faint);
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .product-name {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.3;
+    margin-bottom: 3px;
+  }
+
+  .product-brand {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  /* Nutri Score display */
+  .score-section {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .score-badge {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--sans);
+    font-size: 28px;
+    font-weight: 500;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .score-info { flex: 1; }
+
+  .score-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-faint);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .score-desc {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .scale-row {
+    display: flex;
+    gap: 5px;
+  }
+
+  .scale-item {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    opacity: 0.2;
+    transition: opacity 0.2s;
+  }
+  .scale-item.active { opacity: 1; }
+
+  /* Nutrition grid */
+  .nutrition-section {
+    padding: 20px;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-faint);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .nut-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .nut-item {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    border: 1px solid var(--border);
+  }
+
+  .nut-name {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    font-family: var(--mono);
+  }
+
+  .nut-val {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .nut-unit {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 2px;
+  }
+
+  /* Reset btn */
+  .reset-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 14px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: pointer;
+    margin-top: 16px;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .reset-btn:active { color: var(--text); border-color: var(--text); }
+
+  /* Bottom safe area */
+  .safe-bottom { height: env(safe-area-inset-bottom, 0px); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1>Nutri-Score</h1>
+  </div>
+  <div class="header-sub">Open Food Facts · Albert Heijn</div>
+</header>
+
+<main>
+
+  <!-- Camera -->
+  <div class="cam-section">
+    <div class="cam-label">
+      <div class="cam-dot" id="cam-dot"></div>
+      <span id="cam-label-text">Camera</span>
+    </div>
+
+    <div id="video-wrap">
+      <video id="video" autoplay playsinline muted></video>
+      <div class="scan-frame">
+        <div class="scan-frame-inner">
+          <span></span>
+          <div class="scan-line"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cam-placeholder" id="cam-placeholder">
+      <svg class="cam-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="6" y="14" width="36" height="26" rx="4" stroke="currentColor" stroke-width="2.5"/>
+        <circle cx="24" cy="27" r="7" stroke="currentColor" stroke-width="2.5"/>
+        <path d="M18 14l3-6h6l3 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <p>Scan een barcode met<br>de camera van je iPhone</p>
+    </div>
+
+    <button class="cam-btn" id="cam-toggle-btn" onclick="toggleCamera()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      Camera starten
+    </button>
+  </div>
+
+  <!-- Manual -->
+  <div class="manual-section">
+    <div class="divider"><span>of handmatig</span></div>
+    <div class="input-row">
+      <input type="text" id="barcode-input" placeholder="8710400479710" inputmode="numeric" pattern="[0-9]*" />
+      <button class="search-btn" onclick="lookup()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        Zoeken
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading">
+    <div class="loader"></div>
+    <p>Ophalen...</p>
+  </div>
+
+  <!-- Error -->
+  <div id="error"><p id="error-msg"></p></div>
+
+  <!-- Result -->
+  <div id="result">
+    <div class="result-header">
+      <div id="thumb-wrap"></div>
+      <div class="product-meta">
+        <div class="product-barcode" id="r-barcode"></div>
+        <div class="product-name" id="r-name"></div>
+        <div class="product-brand" id="r-brand"></div>
+      </div>
+    </div>
+
+    <div class="score-section">
+      <div class="score-row">
+        <div class="score-badge" id="r-badge"></div>
+        <div class="score-info">
+          <div class="score-label">Nutri-Score</div>
+          <div class="score-desc" id="r-desc"></div>
+          <div class="scale-row" id="r-scale"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nutrition-section">
+      <div class="section-label">Per 100g</div>
+      <div class="nut-grid" id="r-grid"></div>
+    </div>
+
+    <div style="padding: 0 20px 20px;">
+      <button class="reset-btn" onclick="reset()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+        </svg>
+        Nieuw product scannen
+      </button>
+    </div>
+  </div>
+
+  <div class="safe-bottom"></div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<script>
+const GRADES = {
+  a: { color: '#1d7a4e', label: 'Uitstekend' },
+  b: { color: '#5a9e2f', label: 'Goed' },
+  c: { color: '#d4a017', label: 'Matig' },
+  d: { color: '#d06020', label: 'Slecht' },
+  e: { color: '#c0392b', label: 'Zeer slecht' }
+};
+
+let camStream = null;
+let camActive = false;
+let lastScan = '';
+let lastScanTime = 0;
+
+function toggleCamera() {
+  camActive ? stopCamera() : startCamera();
+}
+
+async function startCamera() {
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } }
+    });
+    const video = document.getElementById('video');
+    video.srcObject = camStream;
+    document.getElementById('cam-placeholder').style.display = 'none';
+    document.getElementById('video-wrap').style.display = 'block';
+    document.getElementById('cam-toggle-btn').textContent = '⏹ Camera stoppen';
+    document.getElementById('cam-toggle-btn').classList.add('secondary');
+    document.getElementById('cam-dot').classList.add('live');
+    document.getElementById('cam-label-text').textContent = 'Live';
+    camActive = true;
+
+    Quagga.init({
+      inputStream: {
+        type: 'LiveStream',
+        target: video,
+        constraints: { facingMode: { ideal: 'environment' } }
+      },
+      decoder: {
+        readers: ['ean_reader', 'ean_8_reader', 'upc_reader', 'upc_e_reader']
+      },
+      locate: true,
+      numOfWorkers: 2
+    }, err => {
+      if (!err) Quagga.start();
+    });
+
+    Quagga.onDetected(data => {
+      const code = data.codeResult.code;
+      const now = Date.now();
+      if (code.length >= 8 && (code !== lastScan || now - lastScanTime > 4000)) {
+        lastScan = code;
+        lastScanTime = now;
+        document.getElementById('barcode-input').value = code;
+        navigator.vibrate && navigator.vibrate(30);
+        lookup();
+      }
+    });
+  } catch(e) {
+    showError('Camera toegang geweigerd. Gebruik handmatige invoer hieronder.');
+  }
+}
+
+function stopCamera() {
+  if (camStream) camStream.getTracks().forEach(t => t.stop());
+  try { Quagga.stop(); } catch(e) {}
+  camStream = null;
+  camActive = false;
+  document.getElementById('cam-placeholder').style.display = 'flex';
+  document.getElementById('video-wrap').style.display = 'none';
+  const btn = document.getElementById('cam-toggle-btn');
+  btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Camera starten`;
+  btn.classList.remove('secondary');
+  document.getElementById('cam-dot').classList.remove('live');
+  document.getElementById('cam-label-text').textContent = 'Camera';
+}
+
+async function lookup() {
+  const code = document.getElementById('barcode-input').value.trim().replace(/\D/g, '');
+  if (!code) return;
+  hideError();
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+
+  try {
+    const res = await fetch(
+      `https://world.openfoodfacts.org/api/v2/product/${code}?fields=product_name,brands,image_front_small_url,nutrition_grades,nutriments`,
+      { headers: { 'User-Agent': 'NutriScoreApp/1.0' } }
+    );
+    const data = await res.json();
+    document.getElementById('loading').style.display = 'none';
+
+    if (data.status !== 1 || !data.product) {
+      showError('Product niet gevonden. Probeer een ander barcodenummer.');
+      return;
+    }
+    render(data.product, code);
+  } catch(e) {
+    document.getElementById('loading').style.display = 'none';
+    showError('Verbindingsfout. Controleer je internetverbinding.');
+  }
+}
+
+function render(p, code) {
+  document.getElementById('r-barcode').textContent = code;
+  document.getElementById('r-name').textContent = p.product_name || 'Naam onbekend';
+  document.getElementById('r-brand').textContent = p.brands || '';
+
+  const thumbWrap = document.getElementById('thumb-wrap');
+  if (p.image_front_small_url) {
+    thumbWrap.innerHTML = `<img src="${p.image_front_small_url}" class="product-thumb" alt="">`;
+  } else {
+    thumbWrap.innerHTML = `<div class="product-thumb-placeholder">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+      </svg>
+    </div>`;
+  }
+
+  const grade = (p.nutrition_grades || '').toLowerCase();
+  const badge = document.getElementById('r-badge');
+  if (grade && GRADES[grade]) {
+    badge.style.background = GRADES[grade].color;
+    badge.textContent = grade.toUpperCase();
+    document.getElementById('r-desc').textContent = GRADES[grade].label;
+  } else {
+    badge.style.background = '#ccc';
+    badge.textContent = '?';
+    document.getElementById('r-desc').textContent = 'Niet beschikbaar';
+  }
+
+  document.getElementById('r-scale').innerHTML = ['a','b','c','d','e'].map(l =>
+    `<div class="scale-item ${l === grade ? 'active' : ''}" style="background:${GRADES[l].color}"></div>`
+  ).join('');
+
+  const n = p.nutriments || {};
+  const fields = [
+    { key: 'energy-kcal_100g', label: 'Calorieën', unit: 'kcal' },
+    { key: 'sugars_100g',      label: 'Suikers',    unit: 'g' },
+    { key: 'fat_100g',         label: 'Vet',         unit: 'g' },
+    { key: 'salt_100g',        label: 'Zout',        unit: 'g' },
+  ];
+
+  document.getElementById('r-grid').innerHTML = fields.map(f => {
+    const raw = n[f.key];
+    const val = raw != null ? (f.unit === 'kcal' ? Math.round(raw) : parseFloat(raw).toFixed(1)) : '—';
+    const unit = raw != null ? f.unit : '';
+    return `<div class="nut-item">
+      <div class="nut-name">${f.label}</div>
+      <div class="nut-val">${val}<span class="nut-unit">${unit}</span></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function showError(msg) {
+  document.getElementById('error-msg').textContent = msg;
+  document.getElementById('error').style.display = 'block';
+}
+
+function hideError() {
+  document.getElementById('error').style.display = 'none';
+}
+
+function reset() {
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('barcode-input').value = '';
+  hideError();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.getElementById('barcode-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); lookup(); }
+});
+</script>
+</body>
+</html>
