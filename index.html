@@ -11,711 +11,881 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --border: #e2e0da;
+  --text: #0a0a0a;
+  --text-muted: #6b6860;
+  --text-faint: #a8a59e;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+  --radius: 16px;
+  --radius-sm: 8px;
+}
+html, body {
+  height: 100%; background: var(--bg);
+  font-family: var(--sans); color: var(--text);
+  -webkit-font-smoothing: antialiased; overscroll-behavior: none;
+}
+body {
+  display: flex; flex-direction: column;
+  min-height: 100dvh; max-width: 480px; margin: 0 auto;
+}
 
-  :root {
-    --bg: #f5f4f0;
-    --surface: #ffffff;
-    --border: #e2e0da;
-    --border-strong: #c8c5bc;
-    --text: #0a0a0a;
-    --text-muted: #6b6860;
-    --text-faint: #a8a59e;
-    --mono: 'DM Mono', monospace;
-    --sans: 'DM Sans', sans-serif;
-    --radius: 16px;
-    --radius-sm: 8px;
-  }
+/* ── Header ── */
+header {
+  padding: 52px 24px 0;
+  background: var(--bg);
+  position: sticky; top: 0; z-index: 10;
+  border-bottom: 1px solid var(--border);
+}
+.header-top { margin-bottom: 14px; }
+h1 { font-size: 22px; font-weight: 500; letter-spacing: -0.5px; margin-bottom: 3px; }
+.header-sub { font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.5px; text-transform: uppercase; }
 
-  html, body {
-    height: 100%;
-    background: var(--bg);
-    font-family: var(--sans);
-    color: var(--text);
-    -webkit-font-smoothing: antialiased;
-    overscroll-behavior: none;
-  }
+/* ── Tabs ── */
+.tabs { display: flex; gap: 0; }
+.tab-btn {
+  flex: 1; padding: 11px 0;
+  background: none; border: none; border-bottom: 2px solid transparent;
+  font-family: var(--sans); font-size: 13px; font-weight: 500;
+  color: var(--text-faint); cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-btn.active { color: var(--text); border-bottom-color: var(--text); }
 
-  body {
-    display: flex;
-    flex-direction: column;
-    min-height: 100dvh;
-    max-width: 480px;
-    margin: 0 auto;
-  }
+main { flex: 1; overflow-y: auto; }
 
-  header {
-    padding: 52px 24px 20px;
-    background: var(--bg);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    border-bottom: 1px solid var(--border);
-  }
+/* ── Panels ── */
+.panel { display: none; padding: 20px 24px 48px; }
+.panel.active { display: block; }
 
-  h1 {
-    font-size: 22px;
-    font-weight: 500;
-    letter-spacing: -0.5px;
-    color: var(--text);
-    margin-bottom: 3px;
-  }
+/* ── Camera ── */
+.cam-section {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; margin-bottom: 16px;
+}
+.cam-label {
+  display: flex; align-items: center; gap: 8px;
+  padding: 13px 18px; border-bottom: 1px solid var(--border);
+  font-family: var(--mono); font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+.cam-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text-faint); flex-shrink: 0; transition: background 0.3s;
+}
+.cam-dot.live { background: #2ecc71; animation: blink 1.5s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.video-wrap {
+  position: relative; background: #0a0a0a;
+  aspect-ratio: 4/3; display: none;
+}
+.video-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scan-frame {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.scan-frame-inner { width: 65%; aspect-ratio: 3/1; position: relative; }
+.scan-frame-inner::before,.scan-frame-inner::after,
+.scan-frame-inner span::before,.scan-frame-inner span::after {
+  content:''; position: absolute; width: 20px; height: 20px;
+  border-color: rgba(255,255,255,0.85); border-style: solid;
+}
+.scan-frame-inner::before{top:0;left:0;border-width:2px 0 0 2px}
+.scan-frame-inner::after{top:0;right:0;border-width:2px 2px 0 0}
+.scan-frame-inner span::before{bottom:0;left:0;border-width:0 0 2px 2px}
+.scan-frame-inner span::after{bottom:0;right:0;border-width:0 2px 2px 0}
+.scan-line {
+  position: absolute; left: 4px; right: 4px; height: 1px;
+  background: rgba(255,255,255,0.6);
+  animation: scanline 2s ease-in-out infinite;
+}
+@keyframes scanline{0%{top:10%}50%{top:90%}100%{top:10%}}
+.cam-placeholder {
+  aspect-ratio: 4/3;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 12px; padding: 32px;
+}
+.cam-placeholder svg { opacity: 0.15; }
+.cam-placeholder p { font-size: 13px; color: var(--text-faint); text-align: center; line-height: 1.5; }
+.cam-btn {
+  width: 100%; padding: 14px 18px;
+  background: var(--text); color: #fff; border: none;
+  font-family: var(--sans); font-size: 14px; font-weight: 500;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: opacity 0.15s; -webkit-tap-highlight-color: transparent;
+}
+.cam-btn:active { opacity: 0.75; }
+.cam-btn.secondary { background: var(--bg); color: var(--text); border-top: 1px solid var(--border); }
 
-  .header-sub {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text-faint);
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-  }
+/* ── Divider ── */
+.divider { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.divider::before,.divider::after { content:''; flex:1; height:1px; background: var(--border); }
+.divider span {
+  font-family: var(--mono); font-size: 11px; color: var(--text-faint);
+  letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap;
+}
 
-  main {
-    flex: 1;
-    padding: 20px 24px 48px;
-    overflow-y: auto;
-  }
+/* ── Input ── */
+.manual-section { margin-bottom: 20px; }
+.input-row { display: flex; gap: 8px; }
+input[type="text"] {
+  flex: 1; padding: 13px 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--mono); font-size: 15px; color: var(--text);
+  outline: none; -webkit-appearance: none; transition: border-color 0.15s;
+}
+input:focus { border-color: var(--text); }
+input::placeholder { color: var(--text-faint); }
+.search-btn {
+  padding: 13px 18px; background: var(--text); color: #fff;
+  border: none; border-radius: var(--radius-sm);
+  font-family: var(--sans); font-size: 14px; font-weight: 500;
+  cursor: pointer; white-space: nowrap;
+  display: flex; align-items: center; gap: 6px;
+  transition: opacity 0.15s; -webkit-tap-highlight-color: transparent;
+}
+.search-btn:active { opacity: 0.75; }
 
-  /* Camera */
-  .cam-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    margin-bottom: 16px;
-  }
+/* ── Loading / Error ── */
+.loading { display: none; text-align: center; padding: 32px 0; }
+.loader {
+  width: 24px; height: 24px;
+  border: 2px solid var(--border); border-top-color: var(--text);
+  border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading p { font-size: 13px; color: var(--text-faint); font-family: var(--mono); }
+.error-box {
+  display: none; background: #fff5f5; border: 1px solid #fecaca;
+  border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 16px;
+}
+.error-box p { font-size: 13px; color: #c0392b; line-height: 1.5; }
 
-  .cam-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 13px 18px;
-    border-bottom: 1px solid var(--border);
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text-muted);
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-  }
+/* ── Single result ── */
+.result-card {
+  display: none; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+  animation: fadeUp 0.3s ease;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.result-header {
+  display: flex; gap: 16px; align-items: flex-start;
+  padding: 20px; border-bottom: 1px solid var(--border);
+}
+.product-thumb {
+  width: 64px; height: 64px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); object-fit: contain; background: var(--bg); flex-shrink: 0;
+}
+.product-thumb-ph {
+  width: 64px; height: 64px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--bg); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.product-meta { flex: 1; min-width: 0; }
+.product-barcode { font-family: var(--mono); font-size: 10px; color: var(--text-faint); letter-spacing: 0.5px; margin-bottom: 4px; text-transform: uppercase; }
+.product-name { font-size: 16px; font-weight: 500; line-height: 1.3; margin-bottom: 3px; }
+.product-brand { font-size: 13px; color: var(--text-muted); }
+.score-section { padding: 20px; border-bottom: 1px solid var(--border); }
+.score-row { display: flex; align-items: center; gap: 16px; }
+.score-badge {
+  width: 64px; height: 64px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 500; color: #fff; flex-shrink: 0;
+}
+.score-info { flex: 1; }
+.score-label { font-family: var(--mono); font-size: 10px; color: var(--text-faint); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
+.score-desc { font-size: 18px; font-weight: 500; margin-bottom: 6px; }
+.score-source { font-family: var(--mono); font-size: 10px; padding: 3px 7px; border-radius: 4px; display: inline-block; margin-bottom: 10px; }
+.source-off  { background: #e8f5e9; color: #2e7d32; }
+.source-calc { background: #fff8e1; color: #f57f17; }
+.scale-row { display: flex; gap: 5px; }
+.scale-item { flex: 1; height: 6px; border-radius: 3px; opacity: 0.2; }
+.scale-item.active { opacity: 1; }
+.nutrition-section { padding: 20px; }
+.section-label { font-family: var(--mono); font-size: 10px; color: var(--text-faint); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 14px; }
+.nut-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.nut-item { background: var(--bg); border-radius: var(--radius-sm); padding: 14px; border: 1px solid var(--border); }
+.nut-name { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-family: var(--mono); }
+.nut-val { font-size: 20px; font-weight: 500; line-height: 1; }
+.nut-unit { font-size: 12px; font-weight: 400; color: var(--text-muted); margin-left: 2px; }
+.nut-missing { color: var(--text-faint); font-size: 15px; }
+.reset-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 14px; background: none;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-family: var(--sans); font-size: 13px; color: var(--text-muted);
+  cursor: pointer; margin-top: 16px;
+  -webkit-tap-highlight-color: transparent; transition: border-color 0.15s, color 0.15s;
+}
+.reset-btn:active { color: var(--text); border-color: var(--text); }
 
-  .cam-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--text-faint);
-    flex-shrink: 0;
-    transition: background 0.3s;
-  }
-  .cam-dot.live { background: #2ecc71; animation: blink 1.5s infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+/* ── Vergelijken ── */
+.cmp-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.cmp-slot {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; min-height: 120px;
+  display: flex; flex-direction: column;
+}
+.cmp-slot-label {
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+  font-family: var(--mono); font-size: 10px; color: var(--text-faint);
+  letter-spacing: 0.5px; text-transform: uppercase;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cmp-slot-label button {
+  background: none; border: none; cursor: pointer; padding: 0;
+  color: var(--text-faint); font-size: 16px; line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+.cmp-slot-label button:active { opacity: 0.5; }
+.cmp-slot-body {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 14px 10px; gap: 8px;
+}
+.cmp-empty { font-size: 12px; color: var(--text-faint); text-align: center; line-height: 1.5; }
+.cmp-scan-btn {
+  padding: 8px 14px; background: var(--text); color: #fff;
+  border: none; border-radius: var(--radius-sm);
+  font-family: var(--sans); font-size: 12px; font-weight: 500;
+  cursor: pointer; -webkit-tap-highlight-color: transparent; transition: opacity 0.15s;
+}
+.cmp-scan-btn:active { opacity: 0.75; }
+.cmp-product-img {
+  width: 44px; height: 44px; object-fit: contain;
+  border-radius: 6px; border: 1px solid var(--border); background: var(--bg);
+}
+.cmp-product-img-ph {
+  width: 44px; height: 44px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+}
+.cmp-badge {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 500; color: #fff;
+}
+.cmp-name { font-size: 11px; font-weight: 500; text-align: center; line-height: 1.3; color: var(--text); }
+.cmp-brand { font-size: 10px; color: var(--text-faint); text-align: center; }
 
-  #video-wrap {
-    position: relative;
-    background: #0a0a0a;
-    aspect-ratio: 4/3;
-    display: none;
-  }
+/* ── Vergelijkingstabel ── */
+.cmp-table {
+  display: none; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  overflow: hidden; margin-bottom: 16px;
+  animation: fadeUp 0.3s ease;
+}
+.cmp-table-header {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+.cmp-col-label {
+  padding: 10px 8px; font-family: var(--mono); font-size: 10px;
+  color: var(--text-faint); letter-spacing: 0.5px; text-transform: uppercase;
+  text-align: center;
+}
+.cmp-col-label:first-child { text-align: left; border-right: 1px solid var(--border); padding-left: 14px; }
+.cmp-col-label:last-child { border-left: 1px solid var(--border); }
+.cmp-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+.cmp-row:last-child { border-bottom: none; }
+.cmp-row-label {
+  padding: 12px 8px 12px 14px;
+  font-size: 12px; color: var(--text-muted); font-family: var(--mono);
+  border-right: 1px solid var(--border);
+  display: flex; align-items: center;
+}
+.cmp-cell {
+  padding: 12px 8px; font-size: 14px; font-weight: 500;
+  text-align: center; display: flex; align-items: center; justify-content: center;
+}
+.cmp-cell:last-child { border-left: 1px solid var(--border); }
+.cmp-cell.winner { background: #f0fdf4; color: #15803d; }
+.cmp-cell.loser  { background: #fff7ed; color: #c2410c; }
+.cmp-cell.draw   { color: var(--text-muted); }
+.cmp-score-badge {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 500; color: #fff;
+}
+.cmp-reset-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 14px; background: none;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-family: var(--sans); font-size: 13px; color: var(--text-muted);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.15s, color 0.15s;
+}
+.cmp-reset-btn:active { color: var(--text); border-color: var(--text); }
 
-  #video { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-  .scan-frame {
-    position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    pointer-events: none;
-  }
-  .scan-frame-inner {
-    width: 65%; aspect-ratio: 3/1; position: relative;
-  }
-  .scan-frame-inner::before, .scan-frame-inner::after,
-  .scan-frame-inner span::before, .scan-frame-inner span::after {
-    content: ''; position: absolute;
-    width: 20px; height: 20px;
-    border-color: rgba(255,255,255,0.85); border-style: solid;
-  }
-  .scan-frame-inner::before { top:0; left:0; border-width: 2px 0 0 2px; }
-  .scan-frame-inner::after  { top:0; right:0; border-width: 2px 2px 0 0; }
-  .scan-frame-inner span::before { bottom:0; left:0; border-width: 0 0 2px 2px; }
-  .scan-frame-inner span::after  { bottom:0; right:0; border-width: 0 2px 2px 0; }
-  .scan-line {
-    position: absolute; left: 4px; right: 4px; height: 1px;
-    background: rgba(255,255,255,0.6);
-    animation: scanline 2s ease-in-out infinite;
-  }
-  @keyframes scanline { 0%{top:10%} 50%{top:90%} 100%{top:10%} }
-
-  .cam-placeholder {
-    aspect-ratio: 4/3;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 12px; padding: 32px;
-  }
-  .cam-placeholder svg { opacity: 0.15; }
-  .cam-placeholder p { font-size: 13px; color: var(--text-faint); text-align: center; line-height: 1.5; }
-
-  .cam-btn {
-    width: 100%; padding: 14px 18px;
-    background: var(--text); color: #fff;
-    border: none; font-family: var(--sans);
-    font-size: 14px; font-weight: 500;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    transition: opacity 0.15s;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .cam-btn:active { opacity: 0.75; }
-  .cam-btn.secondary {
-    background: var(--bg); color: var(--text);
-    border-top: 1px solid var(--border);
-  }
-
-  /* Divider */
-  .divider {
-    display: flex; align-items: center; gap: 12px;
-    margin-bottom: 16px;
-  }
-  .divider::before, .divider::after {
-    content: ''; flex: 1; height: 1px; background: var(--border);
-  }
-  .divider span {
-    font-family: var(--mono); font-size: 11px;
-    color: var(--text-faint); letter-spacing: 0.5px;
-    text-transform: uppercase; white-space: nowrap;
-  }
-
-  /* Manual */
-  .manual-section { margin-bottom: 20px; }
-  .input-row { display: flex; gap: 8px; }
-
-  input[type="text"] {
-    flex: 1; padding: 13px 16px;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-family: var(--mono); font-size: 15px; color: var(--text);
-    outline: none; -webkit-appearance: none;
-    transition: border-color 0.15s;
-  }
-  input:focus { border-color: var(--text); }
-  input::placeholder { color: var(--text-faint); }
-
-  .search-btn {
-    padding: 13px 18px;
-    background: var(--text); color: #fff;
-    border: none; border-radius: var(--radius-sm);
-    font-family: var(--sans); font-size: 14px; font-weight: 500;
-    cursor: pointer; white-space: nowrap;
-    display: flex; align-items: center; gap: 6px;
-    transition: opacity 0.15s;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .search-btn:active { opacity: 0.75; }
-
-  /* Loading */
-  #loading { display: none; text-align: center; padding: 32px 0; }
-  .loader {
-    width: 24px; height: 24px;
-    border: 2px solid var(--border); border-top-color: var(--text);
-    border-radius: 50%; animation: spin 0.7s linear infinite;
-    margin: 0 auto 12px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  #loading p { font-size: 13px; color: var(--text-faint); font-family: var(--mono); }
-
-  /* Error */
-  #error {
-    display: none;
-    background: #fff5f5; border: 1px solid #fecaca;
-    border-radius: var(--radius-sm);
-    padding: 14px 16px; margin-bottom: 16px;
-  }
-  #error p { font-size: 13px; color: #c0392b; line-height: 1.5; }
-
-  /* Result */
-  #result {
-    display: none;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); overflow: hidden;
-    animation: fadeUp 0.3s ease;
-  }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .result-header {
-    display: flex; gap: 16px; align-items: flex-start;
-    padding: 20px; border-bottom: 1px solid var(--border);
-  }
-
-  .product-thumb {
-    width: 64px; height: 64px;
-    border-radius: var(--radius-sm); border: 1px solid var(--border);
-    object-fit: contain; background: var(--bg); flex-shrink: 0;
-  }
-  .product-thumb-placeholder {
-    width: 64px; height: 64px;
-    border-radius: var(--radius-sm); border: 1px solid var(--border);
-    background: var(--bg); flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-  }
-
-  .product-meta { flex: 1; min-width: 0; }
-  .product-barcode {
-    font-family: var(--mono); font-size: 10px;
-    color: var(--text-faint); letter-spacing: 0.5px;
-    margin-bottom: 4px; text-transform: uppercase;
-  }
-  .product-name { font-size: 16px; font-weight: 500; line-height: 1.3; margin-bottom: 3px; }
-  .product-brand { font-size: 13px; color: var(--text-muted); }
-
-  /* Score */
-  .score-section {
-    padding: 20px; border-bottom: 1px solid var(--border);
-  }
-  .score-row { display: flex; align-items: center; gap: 16px; }
-
-  .score-badge {
-    width: 64px; height: 64px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 28px; font-weight: 500; color: #fff; flex-shrink: 0;
-  }
-
-  .score-info { flex: 1; }
-  .score-label {
-    font-family: var(--mono); font-size: 10px;
-    color: var(--text-faint); letter-spacing: 0.5px;
-    text-transform: uppercase; margin-bottom: 4px;
-  }
-  .score-desc { font-size: 18px; font-weight: 500; margin-bottom: 6px; }
-  .score-source {
-    font-family: var(--mono); font-size: 10px;
-    padding: 3px 7px; border-radius: 4px;
-    display: inline-block; margin-bottom: 10px;
-  }
-  .source-off  { background: #e8f5e9; color: #2e7d32; }
-  .source-calc { background: #fff8e1; color: #f57f17; }
-
-  .scale-row { display: flex; gap: 5px; }
-  .scale-item {
-    flex: 1; height: 6px; border-radius: 3px;
-    opacity: 0.2; transition: opacity 0.2s;
-  }
-  .scale-item.active { opacity: 1; }
-
-  /* Nutrition */
-  .nutrition-section { padding: 20px; }
-  .section-label {
-    font-family: var(--mono); font-size: 10px;
-    color: var(--text-faint); letter-spacing: 0.5px;
-    text-transform: uppercase; margin-bottom: 14px;
-  }
-
-  .nut-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-  }
-  .nut-item {
-    background: var(--bg); border-radius: var(--radius-sm);
-    padding: 14px; border: 1px solid var(--border);
-  }
-  .nut-name { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-family: var(--mono); }
-  .nut-val  { font-size: 20px; font-weight: 500; line-height: 1; }
-  .nut-unit { font-size: 12px; font-weight: 400; color: var(--text-muted); margin-left: 2px; }
-  .nut-missing { color: var(--text-faint); font-size: 15px; }
-
-  /* Reset */
-  .reset-btn {
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    width: 100%; padding: 14px;
-    background: none; border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-family: var(--sans); font-size: 13px; color: var(--text-muted);
-    cursor: pointer; margin-top: 16px;
-    -webkit-tap-highlight-color: transparent;
-    transition: border-color 0.15s, color 0.15s;
-  }
-  .reset-btn:active { color: var(--text); border-color: var(--text); }
-
-  .safe-bottom { height: env(safe-area-inset-bottom, 0px); }
+/* ── Camera modal voor vergelijken ── */
+.cam-modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6); z-index: 100;
+  align-items: flex-end; justify-content: center;
+}
+.cam-modal-overlay.open { display: flex; }
+.cam-modal {
+  background: var(--surface); border-radius: var(--radius) var(--radius) 0 0;
+  width: 100%; max-width: 480px; overflow: hidden;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.cam-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+}
+.cam-modal-title { font-size: 15px; font-weight: 500; }
+.cam-modal-close {
+  background: none; border: none; font-size: 22px; line-height: 1;
+  cursor: pointer; color: var(--text-muted); padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.cam-modal-close:active { opacity: 0.5; }
+.cam-modal-video-wrap { position: relative; aspect-ratio: 4/3; background: #0a0a0a; }
+.cam-modal-video-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cam-modal-manual {
+  padding: 14px 20px; border-top: 1px solid var(--border);
+  display: flex; gap: 8px;
+}
+.cam-modal-manual input[type="text"] { font-size: 14px; }
+.safe-bottom { height: env(safe-area-inset-bottom, 0px); }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Nutri-Score</h1>
-  <div class="header-sub">Open Food Facts · 2023 algoritme</div>
+  <div class="header-top">
+    <h1>Nutri-Score</h1>
+    <div class="header-sub">Open Food Facts · 2023 algoritme</div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('scan')">Scannen</button>
+    <button class="tab-btn" onclick="switchTab('compare')">Vergelijken</button>
+  </div>
 </header>
 
 <main>
 
-  <div class="cam-section">
-    <div class="cam-label">
-      <div class="cam-dot" id="cam-dot"></div>
-      <span id="cam-label-text">Camera</span>
+  <!-- ── SCAN PANEL ── -->
+  <div class="panel active" id="panel-scan">
+
+    <div class="cam-section">
+      <div class="cam-label">
+        <div class="cam-dot" id="cam-dot"></div>
+        <span id="cam-label-text">Camera</span>
+      </div>
+      <div class="video-wrap" id="video-wrap">
+        <video id="video" autoplay playsinline muted></video>
+        <div class="scan-frame"><div class="scan-frame-inner"><span></span><div class="scan-line"></div></div></div>
+      </div>
+      <div class="cam-placeholder" id="cam-placeholder">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <rect x="6" y="14" width="36" height="26" rx="4" stroke="currentColor" stroke-width="2.5"/>
+          <circle cx="24" cy="27" r="7" stroke="currentColor" stroke-width="2.5"/>
+          <path d="M18 14l3-6h6l3 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p>Scan een barcode met<br>de camera van je iPhone</p>
+      </div>
+      <button class="cam-btn" id="cam-toggle-btn" onclick="toggleCamera()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        Camera starten
+      </button>
     </div>
-    <div id="video-wrap">
-      <video id="video" autoplay playsinline muted></video>
-      <div class="scan-frame">
-        <div class="scan-frame-inner">
-          <span></span>
-          <div class="scan-line"></div>
+
+    <div class="manual-section">
+      <div class="divider"><span>of handmatig</span></div>
+      <div class="input-row">
+        <input type="text" id="barcode-input" placeholder="8710400479710" inputmode="numeric" pattern="[0-9]*" />
+        <button class="search-btn" onclick="lookupScan()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          Zoeken
+        </button>
+      </div>
+    </div>
+
+    <div class="loading" id="scan-loading"><div class="loader"></div><p>Ophalen...</p></div>
+    <div class="error-box" id="scan-error"><p id="scan-error-msg"></p></div>
+
+    <div class="result-card" id="result">
+      <div class="result-header">
+        <div id="thumb-wrap"></div>
+        <div class="product-meta">
+          <div class="product-barcode" id="r-barcode"></div>
+          <div class="product-name" id="r-name"></div>
+          <div class="product-brand" id="r-brand"></div>
+        </div>
+      </div>
+      <div class="score-section">
+        <div class="score-row">
+          <div class="score-badge" id="r-badge"></div>
+          <div class="score-info">
+            <div class="score-label">Nutri-Score</div>
+            <div class="score-desc" id="r-desc"></div>
+            <div id="r-source"></div>
+            <div class="scale-row" id="r-scale"></div>
+          </div>
+        </div>
+      </div>
+      <div class="nutrition-section">
+        <div class="section-label">Per 100g</div>
+        <div class="nut-grid" id="r-grid"></div>
+      </div>
+      <div style="padding: 0 20px 20px;">
+        <button class="reset-btn" onclick="resetScan()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+          </svg>
+          Nieuw product scannen
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── VERGELIJKEN PANEL ── -->
+  <div class="panel" id="panel-compare">
+
+    <div class="cmp-slots">
+      <div class="cmp-slot" id="slot-0">
+        <div class="cmp-slot-label">
+          <span>Product A</span>
+          <button onclick="clearSlot(0)" id="clear-0" style="display:none">✕</button>
+        </div>
+        <div class="cmp-slot-body" id="slot-body-0">
+          <p class="cmp-empty">Nog leeg</p>
+          <button class="cmp-scan-btn" onclick="openCamModal(0)">Scan product</button>
+        </div>
+      </div>
+      <div class="cmp-slot" id="slot-1">
+        <div class="cmp-slot-label">
+          <span>Product B</span>
+          <button onclick="clearSlot(1)" id="clear-1" style="display:none">✕</button>
+        </div>
+        <div class="cmp-slot-body" id="slot-body-1">
+          <p class="cmp-empty">Nog leeg</p>
+          <button class="cmp-scan-btn" onclick="openCamModal(1)">Scan product</button>
         </div>
       </div>
     </div>
-    <div class="cam-placeholder" id="cam-placeholder">
-      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="6" y="14" width="36" height="26" rx="4" stroke="currentColor" stroke-width="2.5"/>
-        <circle cx="24" cy="27" r="7" stroke="currentColor" stroke-width="2.5"/>
-        <path d="M18 14l3-6h6l3 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <p>Scan een barcode met<br>de camera van je iPhone</p>
+
+    <div class="error-box" id="cmp-error"><p id="cmp-error-msg"></p></div>
+    <div class="loading" id="cmp-loading"><div class="loader"></div><p>Ophalen...</p></div>
+
+    <div class="cmp-table" id="cmp-table">
+      <div class="cmp-table-header">
+        <div class="cmp-col-label">Voedingswaarde</div>
+        <div class="cmp-col-label" id="cmp-col-a">A</div>
+        <div class="cmp-col-label" id="cmp-col-b">B</div>
+      </div>
+      <div id="cmp-rows"></div>
     </div>
-    <button class="cam-btn" id="cam-toggle-btn" onclick="toggleCamera()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-        <circle cx="12" cy="13" r="4"/>
+
+    <button class="cmp-reset-btn" id="cmp-reset-btn" onclick="resetCompare()" style="display:none">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
       </svg>
-      Camera starten
+      Opnieuw vergelijken
     </button>
   </div>
 
-  <div class="manual-section">
-    <div class="divider"><span>of handmatig</span></div>
-    <div class="input-row">
-      <input type="text" id="barcode-input" placeholder="8710400479710" inputmode="numeric" pattern="[0-9]*" />
-      <button class="search-btn" onclick="lookup()">
+</main>
+
+<!-- ── Camera modal voor vergelijken ── -->
+<div class="cam-modal-overlay" id="cam-modal">
+  <div class="cam-modal">
+    <div class="cam-modal-header">
+      <span class="cam-modal-title" id="cam-modal-title">Product scannen</span>
+      <button class="cam-modal-close" onclick="closeCamModal()">×</button>
+    </div>
+    <div class="cam-modal-video-wrap">
+      <video id="modal-video" autoplay playsinline muted></video>
+      <div class="scan-frame"><div class="scan-frame-inner"><span></span><div class="scan-line"></div></div></div>
+    </div>
+    <div class="cam-modal-manual">
+      <input type="text" id="modal-barcode" placeholder="Barcode handmatig invoeren" inputmode="numeric" pattern="[0-9]*" />
+      <button class="search-btn" onclick="lookupModal()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        Zoeken
       </button>
     </div>
   </div>
+</div>
 
-  <div id="loading"><div class="loader"></div><p>Ophalen...</p></div>
-  <div id="error"><p id="error-msg"></p></div>
-
-  <div id="result">
-    <div class="result-header">
-      <div id="thumb-wrap"></div>
-      <div class="product-meta">
-        <div class="product-barcode" id="r-barcode"></div>
-        <div class="product-name" id="r-name"></div>
-        <div class="product-brand" id="r-brand"></div>
-      </div>
-    </div>
-
-    <div class="score-section">
-      <div class="score-row">
-        <div class="score-badge" id="r-badge"></div>
-        <div class="score-info">
-          <div class="score-label">Nutri-Score</div>
-          <div class="score-desc" id="r-desc"></div>
-          <div id="r-source"></div>
-          <div class="scale-row" id="r-scale"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="nutrition-section">
-      <div class="section-label">Per 100g</div>
-      <div class="nut-grid" id="r-grid"></div>
-    </div>
-
-    <div style="padding: 0 20px 20px;">
-      <button class="reset-btn" onclick="reset()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
-        </svg>
-        Nieuw product scannen
-      </button>
-    </div>
-  </div>
-
-  <div class="safe-bottom"></div>
-</main>
+<div class="safe-bottom"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
 <script>
-// ─── Nutri-Score 2023 algoritme (algemene voedingsmiddelen) ───────────────────
-
-function scoreEnergy(kj) {
-  // 0–10 punten, stappen van 335 kJ
-  const t = [335,670,1005,1340,1675,2010,2345,2680,3015,3350];
-  return t.filter(v => kj > v).length;
+// ─── Nutri-Score 2023 algoritme ───────────────────────────────────────────────
+function scoreEnergy(kj){const t=[335,670,1005,1340,1675,2010,2345,2680,3015,3350];return t.filter(v=>kj>v).length;}
+function scoreSugars(g){const t=[3.4,6.8,10.2,13.6,17,20.4,23.8,27.2,30.6,34,37.4,40.8,44.2,47.6,51];return t.filter(v=>g>v).length;}
+function scoreSatFat(g){return Math.min(10,Math.floor(g));}
+function scoreSalt(g){return Math.min(20,Math.floor(g/0.2));}
+function scoreFibre(g){return [3.0,4.1,5.2,6.3,7.4].filter(v=>g>=v).length;}
+function scoreProtein(g){return [2.4,4.8,7.2,9.6,12,14.4,17].filter(v=>g>=v).length;}
+function scoreFVL(p){return p>80?5:p>60?3:p>40?1:0;}
+function gradeFromScore(s){return s<1?'a':s<3?'b':s<11?'c':s<19?'d':'e';}
+function calcNutriScore(n){
+  const energy=n['energy-kj_100g']??(n['energy-kcal_100g']??0)*4.184;
+  const sugars=n['sugars_100g']??0;
+  const satfat=n['saturated-fat_100g']??0;
+  const salt=n['salt_100g']??0;
+  const fibre=n['fiber_100g']??n['fibre_100g']??0;
+  const protein=n['proteins_100g']??0;
+  const fvl=n['fruits-vegetables-legumes-nuts_100g']??n['fruits-vegetables-nuts_100g']??0;
+  const N=scoreEnergy(energy)+scoreSugars(sugars)+scoreSatFat(satfat)+scoreSalt(salt);
+  const fvlPts=scoreFVL(fvl),fibPts=scoreFibre(fibre),proPts=scoreProtein(protein);
+  const P=N<11?(fvlPts+fibPts+proPts):(fvlPts+fibPts);
+  const score=N-P;
+  return{score,grade:gradeFromScore(score)};
 }
 
-function scoreSugars(g) {
-  // Sugar Ib schaal: 3.4 g stappen, 0–15 punten
-  const t = [3.4,6.8,10.2,13.6,17,20.4,23.8,27.2,30.6,34,37.4,40.8,44.2,47.6,51];
-  return t.filter(v => g > v).length;
-}
-
-function scoreSatFat(g) {
-  // 0–10, 1 punt per gram
-  return Math.min(10, Math.floor(g));
-}
-
-function scoreSalt(g) {
-  // 0–20, stappen van 0.2g tot 4.0g
-  const points = Math.floor(g / 0.2);
-  return Math.min(20, points);
-}
-
-function scoreFibre(g) {
-  // Fibre scenario II: 3.0, 4.1, 5.2, 6.3, 7.4
-  const t = [3.0, 4.1, 5.2, 6.3, 7.4];
-  return t.filter(v => g >= v).length;
-}
-
-function scoreProtein(g) {
-  // Protein scenario II: 2.4, 4.8, 7.2, 9.6, 12, 14.4, 17
-  const t = [2.4, 4.8, 7.2, 9.6, 12, 14.4, 17];
-  return t.filter(v => g >= v).length;
-}
-
-function scoreFVL(pct) {
-  // % groente/fruit/peulvruchten/noten
-  if (pct > 80) return 5;
-  if (pct > 60) return 3;
-  if (pct > 40) return 1;
-  return 0;
-}
-
-function gradeFromScore(score) {
-  // Algemene voedingsmiddelen cut-offs
-  if (score < 1)  return 'a';
-  if (score < 3)  return 'b';
-  if (score < 11) return 'c';
-  if (score < 19) return 'd';
-  return 'e';
-}
-
-function calcNutriScore(n) {
-  const energy  = n['energy-kj_100g']       ?? (n['energy-kcal_100g'] ?? 0) * 4.184;
-  const sugars  = n['sugars_100g']           ?? 0;
-  const satfat  = n['saturated-fat_100g']    ?? 0;
-  const salt    = n['salt_100g']             ?? 0;
-  const fibre   = n['fiber_100g'] ?? n['fibre_100g'] ?? 0;
-  const protein = n['proteins_100g']         ?? 0;
-  const fvlPct  = n['fruits-vegetables-legumes-nuts_100g']
-               ?? n['fruits-vegetables-nuts_100g']
-               ?? 0;
-
-  const eP  = scoreEnergy(energy);
-  const sP  = scoreSugars(sugars);
-  const sfP = scoreSatFat(satfat);
-  const saP = scoreSalt(salt);
-  const N   = eP + sP + sfP + saP;
-
-  const fvlPts = scoreFVL(fvlPct);
-  const fibPts = scoreFibre(fibre);
-  const proPts = scoreProtein(protein);
-
-  // Score-combining regel: als N < 11 trek ook eiwit af, anders alleen FVL + vezel
-  const P = N < 11 ? (fvlPts + fibPts + proPts) : (fvlPts + fibPts);
-  const score = N - P;
-
-  return { score, grade: gradeFromScore(score), N, P, parts: { eP, sP, sfP, saP, fvlPts, fibPts, proPts } };
-}
-
-// ─── UI helpers ──────────────────────────────────────────────────────────────
-
-const GRADES = {
-  a: { color: '#1d7a4e', label: 'Uitstekend' },
-  b: { color: '#5a9e2f', label: 'Goed' },
-  c: { color: '#d4a017', label: 'Matig' },
-  d: { color: '#d06020', label: 'Slecht' },
-  e: { color: '#c0392b', label: 'Zeer slecht' }
+const GRADES={
+  a:{color:'#1d7a4e',label:'Uitstekend'},
+  b:{color:'#5a9e2f',label:'Goed'},
+  c:{color:'#d4a017',label:'Matig'},
+  d:{color:'#d06020',label:'Slecht'},
+  e:{color:'#c0392b',label:'Zeer slecht'}
 };
 
-let camStream = null, camActive = false;
-let lastScan = '', lastScanTime = 0;
-
-function toggleCamera() { camActive ? stopCamera() : startCamera(); }
-
-async function startCamera() {
-  try {
-    camStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }
-    });
-    const video = document.getElementById('video');
-    video.srcObject = camStream;
-    document.getElementById('cam-placeholder').style.display = 'none';
-    document.getElementById('video-wrap').style.display = 'block';
-    const btn = document.getElementById('cam-toggle-btn');
-    btn.innerHTML = '&#9646; Camera stoppen';
-    btn.classList.add('secondary');
-    document.getElementById('cam-dot').classList.add('live');
-    document.getElementById('cam-label-text').textContent = 'Live';
-    camActive = true;
-
-    Quagga.init({
-      inputStream: { type: 'LiveStream', target: video, constraints: { facingMode: { ideal: 'environment' } } },
-      decoder: { readers: ['ean_reader','ean_8_reader','upc_reader','upc_e_reader'] },
-      locate: true, numOfWorkers: 2
-    }, err => { if (!err) Quagga.start(); });
-
-    Quagga.onDetected(data => {
-      const code = data.codeResult.code;
-      const now = Date.now();
-      if (code.length >= 8 && (code !== lastScan || now - lastScanTime > 4000)) {
-        lastScan = code; lastScanTime = now;
-        document.getElementById('barcode-input').value = code;
-        navigator.vibrate && navigator.vibrate(40);
-        Quagga.stop();
-        lookup(true);
-      }
-    });
-  } catch(e) {
-    showError('Camera toegang geweigerd. Gebruik handmatige invoer hieronder.');
-  }
-}
-
-function stopCamera() {
-  if (camStream) camStream.getTracks().forEach(t => t.stop());
-  try { Quagga.stop(); } catch(e) {}
-  camStream = null; camActive = false;
-  document.getElementById('cam-placeholder').style.display = 'flex';
-  document.getElementById('video-wrap').style.display = 'none';
-  const btn = document.getElementById('cam-toggle-btn');
-  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Camera starten';
-  btn.classList.remove('secondary');
-  document.getElementById('cam-dot').classList.remove('live');
-  document.getElementById('cam-label-text').textContent = 'Camera';
-}
-
-const FIELDS = 'product_name,brands,image_front_small_url,nutrition_grades,nutriscore_grade,nutriscore_score_producer,nutriments,categories_tags';
-const ENDPOINTS = [
-  code => `https://world.openfoodfacts.org/api/v2/product/${code}?fields=${FIELDS}`,
-  code => `https://world.openfoodfacts.net/api/v2/product/${code}?fields=${FIELDS}`,
-  code => `https://world.openfoodfacts.org/api/v0/product/${code}.json`,
+const NUT_FIELDS=[
+  {key:'energy-kcal_100g',label:'Calorieën',unit:'kcal',round:0,lowerIsBetter:true},
+  {key:'sugars_100g',label:'Suikers',unit:'g',round:1,lowerIsBetter:true},
+  {key:'fat_100g',label:'Vet',unit:'g',round:1,lowerIsBetter:true},
+  {key:'saturated-fat_100g',label:'Verzadigd vet',unit:'g',round:1,lowerIsBetter:true},
+  {key:'salt_100g',label:'Zout',unit:'g',round:2,lowerIsBetter:true},
+  {key:'proteins_100g',label:'Eiwit',unit:'g',round:1,lowerIsBetter:false},
 ];
 
-async function fetchWithTimeout(url, ms = 8000) {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), ms);
-  try {
-    const res = await fetch(url, { signal: ctrl.signal });
+// ─── API ──────────────────────────────────────────────────────────────────────
+const FIELDS='product_name,brands,image_front_small_url,nutrition_grades,nutriscore_grade,nutriscore_score_producer,nutriments';
+const ENDPOINTS=[
+  c=>`https://world.openfoodfacts.org/api/v2/product/${c}?fields=${FIELDS}`,
+  c=>`https://world.openfoodfacts.net/api/v2/product/${c}?fields=${FIELDS}`,
+  c=>`https://world.openfoodfacts.org/api/v0/product/${c}.json`,
+];
+
+async function fetchWithTimeout(url,ms=8000){
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),ms);
+  try{
+    const res=await fetch(url,{signal:ctrl.signal});
     clearTimeout(timer);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
-  } catch(e) {
-    clearTimeout(timer);
-    throw e;
-  }
+  }catch(e){clearTimeout(timer);throw e;}
 }
 
-async function lookup(silent = false) {
-  const code = document.getElementById('barcode-input').value.trim().replace(/\D/g,'');
-  if (!code) return;
-  hideError();
-  document.getElementById('result').style.display = 'none';
-  if (!silent) document.getElementById('loading').style.display = 'block';
+async function fetchProduct(code){
+  for(const fn of ENDPOINTS){
+    try{
+      const data=await fetchWithTimeout(fn(code));
+      if(data.status===1&&data.product) return data.product;
+    }catch(e){}
+  }
+  return null;
+}
 
-  let lastErr = null;
-  for (const endpointFn of ENDPOINTS) {
-    try {
-      const data = await fetchWithTimeout(endpointFn(code));
-      document.getElementById('loading').style.display = 'none';
-      if (data.status !== 1 || !data.product) {
-        if (!silent) showError('Product niet gevonden. Probeer een ander barcodenummer.');
-        return;
+function resolveGrade(p){
+  const n=p.nutriments||{};
+  const producerGrade=(p.nutriscore_grade||'').toLowerCase();
+  const hasProducer=producerGrade&&GRADES[producerGrade]&&p.nutriscore_score_producer!=null;
+  if(hasProducer) return{grade:producerGrade,source:'verpakking'};
+  const calc=calcNutriScore(n);
+  return{grade:calc.grade,source:'berekend'};
+}
+
+// ─── Tab switching ────────────────────────────────────────────────────────────
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['scan','compare'][i]===tab));
+  document.getElementById('panel-scan').classList.toggle('active',tab==='scan');
+  document.getElementById('panel-compare').classList.toggle('active',tab==='compare');
+  if(tab==='scan'&&modalStream) closeCamModal();
+}
+
+// ─── Single scan ─────────────────────────────────────────────────────────────
+let camStream=null,camActive=false,lastScan='',lastScanTime=0;
+
+function toggleCamera(){camActive?stopCamera():startCamera();}
+
+async function startCamera(){
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280}}});
+    const video=document.getElementById('video');
+    video.srcObject=camStream;
+    document.getElementById('cam-placeholder').style.display='none';
+    document.getElementById('video-wrap').style.display='block';
+    const btn=document.getElementById('cam-toggle-btn');
+    btn.innerHTML='&#9646; Camera stoppen';
+    btn.classList.add('secondary');
+    document.getElementById('cam-dot').classList.add('live');
+    document.getElementById('cam-label-text').textContent='Live';
+    camActive=true;
+    Quagga.init({
+      inputStream:{type:'LiveStream',target:video,constraints:{facingMode:{ideal:'environment'}}},
+      decoder:{readers:['ean_reader','ean_8_reader','upc_reader','upc_e_reader']},
+      locate:true,numOfWorkers:2
+    },err=>{if(!err)Quagga.start();});
+    Quagga.onDetected(data=>{
+      const code=data.codeResult.code;
+      const now=Date.now();
+      if(code.length>=8&&(code!==lastScan||now-lastScanTime>4000)){
+        lastScan=code;lastScanTime=now;
+        document.getElementById('barcode-input').value=code;
+        navigator.vibrate&&navigator.vibrate(40);
+        Quagga.stop();
+        lookupScan(true);
       }
-      render(data.product, code);
-      return;
-    } catch(e) {
-      lastErr = e;
-    }
-  }
-
-  document.getElementById('loading').style.display = 'none';
-  if (!silent) showError('Kon geen verbinding maken met Open Food Facts. Controleer je internetverbinding en probeer opnieuw.');
+    });
+  }catch(e){showScanError('Camera toegang geweigerd. Gebruik handmatige invoer hieronder.');}
 }
 
-function render(p, code) {
-  document.getElementById('r-barcode').textContent = code;
-  document.getElementById('r-name').textContent = p.product_name || 'Naam onbekend';
-  document.getElementById('r-brand').textContent = p.brands || '';
+function stopCamera(){
+  if(camStream)camStream.getTracks().forEach(t=>t.stop());
+  try{Quagga.stop();}catch(e){}
+  camStream=null;camActive=false;
+  document.getElementById('cam-placeholder').style.display='flex';
+  document.getElementById('video-wrap').style.display='none';
+  const btn=document.getElementById('cam-toggle-btn');
+  btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Camera starten';
+  btn.classList.remove('secondary');
+  document.getElementById('cam-dot').classList.remove('live');
+  document.getElementById('cam-label-text').textContent='Camera';
+}
 
-  const thumbWrap = document.getElementById('thumb-wrap');
-  thumbWrap.innerHTML = p.image_front_small_url
-    ? `<img src="${p.image_front_small_url}" class="product-thumb" alt="">`
-    : `<div class="product-thumb-placeholder"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>`;
+async function lookupScan(silent=false){
+  const code=document.getElementById('barcode-input').value.trim().replace(/\D/g,'');
+  if(!code)return;
+  hideScanError();
+  document.getElementById('result').style.display='none';
+  if(!silent)document.getElementById('scan-loading').style.display='block';
+  const p=await fetchProduct(code);
+  document.getElementById('scan-loading').style.display='none';
+  if(!p){if(!silent)showScanError('Product niet gevonden. Probeer een ander barcodenummer.');return;}
+  renderSingle(p,code);
+}
 
-  // Nutri-Score prioriteit:
-  // 1. nutriscore_score_producer → fabrikant heeft score aangeleverd (staat op verpakking)
-  // 2. Zelf berekenen via 2023 algoritme
-  const n = p.nutriments || {};
-  const producerGrade = (p.nutriscore_grade || '').toLowerCase();
-  const hasProducerScore = producerGrade && GRADES[producerGrade] &&
-    p.nutriscore_score_producer != null;
-  let grade, sourceLabel, sourceClass;
-
-  if (hasProducerScore) {
-    grade = producerGrade;
-    sourceLabel = 'Score van verpakking';
-    sourceClass = 'source-off';
-  } else {
-    const calc = calcNutriScore(n);
-    grade = calc.grade;
-    sourceLabel = 'Berekend (2023 algoritme)';
-    sourceClass = 'source-calc';
-  }
-
-  const badge = document.getElementById('r-badge');
-  badge.style.background = GRADES[grade]?.color || '#ccc';
-  badge.textContent = grade ? grade.toUpperCase() : '?';
-
-  document.getElementById('r-desc').textContent = GRADES[grade]?.label || 'Onbekend';
-  document.getElementById('r-source').innerHTML =
-    `<span class="score-source ${sourceClass}">${sourceLabel}</span>`;
-
-  document.getElementById('r-scale').innerHTML = ['a','b','c','d','e'].map(l =>
-    `<div class="scale-item ${l === grade ? 'active' : ''}" style="background:${GRADES[l].color}"></div>`
-  ).join('');
-
-  const fields = [
-    { key: 'energy-kcal_100g', label: 'Calorieën', unit: 'kcal', round: 0 },
-    { key: 'sugars_100g',      label: 'Suikers',    unit: 'g',    round: 1 },
-    { key: 'fat_100g',         label: 'Vet',         unit: 'g',    round: 1 },
-    { key: 'saturated-fat_100g', label: 'Verzadigd vet', unit: 'g', round: 1 },
-    { key: 'salt_100g',        label: 'Zout',        unit: 'g',    round: 2 },
-    { key: 'proteins_100g',    label: 'Eiwit',       unit: 'g',    round: 1 },
-  ];
-
-  document.getElementById('r-grid').innerHTML = fields.map(f => {
-    const raw = n[f.key];
-    const val = raw != null
-      ? (f.round === 0 ? Math.round(raw) : parseFloat(raw).toFixed(f.round))
-      : null;
-    return `<div class="nut-item">
-      <div class="nut-name">${f.label}</div>
-      <div class="nut-val">
-        ${val != null
-          ? `${val}<span class="nut-unit">${f.unit}</span>`
-          : `<span class="nut-missing">—</span>`}
-      </div>
-    </div>`;
+function renderSingle(p,code){
+  document.getElementById('r-barcode').textContent=code;
+  document.getElementById('r-name').textContent=p.product_name||'Naam onbekend';
+  document.getElementById('r-brand').textContent=p.brands||'';
+  const tw=document.getElementById('thumb-wrap');
+  tw.innerHTML=p.image_front_small_url
+    ?`<img src="${p.image_front_small_url}" class="product-thumb" alt="">`
+    :`<div class="product-thumb-ph"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>`;
+  const{grade,source}=resolveGrade(p);
+  const badge=document.getElementById('r-badge');
+  badge.style.background=GRADES[grade]?.color||'#ccc';
+  badge.textContent=grade?grade.toUpperCase():'?';
+  document.getElementById('r-desc').textContent=GRADES[grade]?.label||'Onbekend';
+  document.getElementById('r-source').innerHTML=
+    `<span class="score-source ${source==='verpakking'?'source-off':'source-calc'}">${source==='verpakking'?'Score van verpakking':'Berekend (2023 algoritme)'}</span>`;
+  document.getElementById('r-scale').innerHTML=['a','b','c','d','e'].map(l=>
+    `<div class="scale-item${l===grade?' active':''}" style="background:${GRADES[l].color}"></div>`).join('');
+  const n=p.nutriments||{};
+  document.getElementById('r-grid').innerHTML=NUT_FIELDS.map(f=>{
+    const raw=n[f.key];
+    const val=raw!=null?(f.round===0?Math.round(raw):parseFloat(raw).toFixed(f.round)):null;
+    return`<div class="nut-item"><div class="nut-name">${f.label}</div><div class="nut-val">${val!=null?`${val}<span class="nut-unit">${f.unit}</span>`:`<span class="nut-missing">—</span>`}</div></div>`;
   }).join('');
-
-  document.getElementById('result').style.display = 'block';
-  document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.getElementById('result').style.display='block';
+  document.getElementById('result').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
-function showError(msg) {
-  document.getElementById('error-msg').textContent = msg;
-  document.getElementById('error').style.display = 'block';
-}
-function hideError() { document.getElementById('error').style.display = 'none'; }
+function showScanError(msg){document.getElementById('scan-error-msg').textContent=msg;document.getElementById('scan-error').style.display='block';}
+function hideScanError(){document.getElementById('scan-error').style.display='none';}
 
-function reset() {
-  document.getElementById('result').style.display = 'none';
-  document.getElementById('barcode-input').value = '';
-  lastScan = ''; lastScanTime = 0;
-  hideError();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (camActive) Quagga.start();
+function resetScan(){
+  document.getElementById('result').style.display='none';
+  document.getElementById('barcode-input').value='';
+  lastScan='';lastScanTime=0;
+  hideScanError();
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(camActive)Quagga.start();
 }
 
-document.getElementById('barcode-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') { e.preventDefault(); lookup(); }
+document.getElementById('barcode-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){e.preventDefault();lookupScan();}
+});
+
+// ─── Vergelijken ──────────────────────────────────────────────────────────────
+let cmpData=[null,null];
+let modalStream=null,modalSlot=0,modalLastScan='',modalLastScanTime=0;
+
+function openCamModal(slot){
+  modalSlot=slot;
+  document.getElementById('cam-modal-title').textContent=`Product ${slot===0?'A':'B'} scannen`;
+  document.getElementById('modal-barcode').value='';
+  document.getElementById('cam-modal').classList.add('open');
+  startModalCamera();
+}
+
+function closeCamModal(){
+  document.getElementById('cam-modal').classList.remove('open');
+  stopModalCamera();
+}
+
+async function startModalCamera(){
+  try{
+    modalStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280}}});
+    const video=document.getElementById('modal-video');
+    video.srcObject=modalStream;
+    Quagga.init({
+      inputStream:{type:'LiveStream',target:video,constraints:{facingMode:{ideal:'environment'}}},
+      decoder:{readers:['ean_reader','ean_8_reader','upc_reader','upc_e_reader']},
+      locate:true,numOfWorkers:2
+    },err=>{if(!err)Quagga.start();});
+    Quagga.onDetected(data=>{
+      const code=data.codeResult.code;
+      const now=Date.now();
+      if(code.length>=8&&(code!==modalLastScan||now-modalLastScanTime>4000)){
+        modalLastScan=code;modalLastScanTime=now;
+        navigator.vibrate&&navigator.vibrate(40);
+        Quagga.stop();
+        document.getElementById('modal-barcode').value=code;
+        lookupModal(true);
+      }
+    });
+  }catch(e){}
+}
+
+function stopModalCamera(){
+  if(modalStream)modalStream.getTracks().forEach(t=>t.stop());
+  try{Quagga.stop();}catch(e){}
+  modalStream=null;
+}
+
+async function lookupModal(silent=false){
+  const code=document.getElementById('modal-barcode').value.trim().replace(/\D/g,'');
+  if(!code)return;
+  document.getElementById('cmp-error').style.display='none';
+  document.getElementById('cmp-loading').style.display='block';
+  closeCamModal();
+  const p=await fetchProduct(code);
+  document.getElementById('cmp-loading').style.display='none';
+  if(!p){
+    showCmpError('Product niet gevonden. Probeer opnieuw.');
+    return;
+  }
+  cmpData[modalSlot]=p;
+  renderSlot(modalSlot,p);
+  if(cmpData[0]&&cmpData[1])renderComparison();
+}
+
+document.getElementById('modal-barcode').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){e.preventDefault();lookupModal();}
+});
+
+function renderSlot(slot,p){
+  const{grade}=resolveGrade(p);
+  const body=document.getElementById(`slot-body-${slot}`);
+  const imgHtml=p.image_front_small_url
+    ?`<img src="${p.image_front_small_url}" class="cmp-product-img" alt="">`
+    :`<div class="cmp-product-img-ph"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>`;
+  body.innerHTML=`
+    ${imgHtml}
+    <div class="cmp-badge" style="background:${GRADES[grade]?.color||'#ccc'}">${grade.toUpperCase()}</div>
+    <div class="cmp-name">${(p.product_name||'Onbekend').substring(0,40)}</div>
+    <div class="cmp-brand">${(p.brands||'').substring(0,30)}</div>
+    <button class="cmp-scan-btn" onclick="openCamModal(${slot})" style="margin-top:4px">Wijzigen</button>
+  `;
+  document.getElementById(`clear-${slot}`).style.display='block';
+}
+
+function clearSlot(slot){
+  cmpData[slot]=null;
+  const body=document.getElementById(`slot-body-${slot}`);
+  body.innerHTML=`<p class="cmp-empty">Nog leeg</p><button class="cmp-scan-btn" onclick="openCamModal(${slot})">Scan product</button>`;
+  document.getElementById(`clear-${slot}`).style.display='none';
+  document.getElementById('cmp-table').style.display='none';
+  document.getElementById('cmp-reset-btn').style.display='none';
+}
+
+function renderComparison(){
+  const [a,b]=cmpData;
+  const na=a.nutriments||{}, nb=b.nutriments||{};
+  const gradeA=resolveGrade(a).grade, gradeB=resolveGrade(b).grade;
+  const gradeOrder=['a','b','c','d','e'];
+
+  document.getElementById('cmp-col-a').textContent=(a.product_name||'Product A').substring(0,18);
+  document.getElementById('cmp-col-b').textContent=(b.product_name||'Product B').substring(0,18);
+
+  // Score rij
+  const scoreA=gradeOrder.indexOf(gradeA), scoreB=gradeOrder.indexOf(gradeB);
+  let scoreClass=['draw','draw'];
+  if(scoreA<scoreB) scoreClass=['winner','loser'];
+  else if(scoreB<scoreA) scoreClass=['loser','winner'];
+
+  let rows=`<div class="cmp-row">
+    <div class="cmp-row-label">Score</div>
+    <div class="cmp-cell ${scoreClass[0]}"><div class="cmp-score-badge" style="background:${GRADES[gradeA].color}">${gradeA.toUpperCase()}</div></div>
+    <div class="cmp-cell ${scoreClass[1]}"><div class="cmp-score-badge" style="background:${GRADES[gradeB].color}">${gradeB.toUpperCase()}</div></div>
+  </div>`;
+
+  // Voedingswaarden rijen
+  NUT_FIELDS.forEach(f=>{
+    const rawA=na[f.key], rawB=nb[f.key];
+    const valA=rawA!=null?(f.round===0?Math.round(rawA):parseFloat(rawA).toFixed(f.round)):null;
+    const valB=rawB!=null?(f.round===0?Math.round(rawB):parseFloat(rawB).toFixed(f.round)):null;
+    let classA='draw', classB='draw';
+    if(valA!=null&&valB!=null){
+      const numA=parseFloat(valA), numB=parseFloat(valB);
+      if(numA!==numB){
+        if(f.lowerIsBetter){
+          classA=numA<numB?'winner':'loser';
+          classB=numB<numA?'winner':'loser';
+        } else {
+          classA=numA>numB?'winner':'loser';
+          classB=numB>numA?'winner':'loser';
+        }
+      }
+    }
+    rows+=`<div class="cmp-row">
+      <div class="cmp-row-label">${f.label}</div>
+      <div class="cmp-cell ${classA}">${valA!=null?`${valA}<span style="font-size:10px;font-weight:400;color:var(--text-muted);margin-left:2px">${f.unit}</span>`:'—'}</div>
+      <div class="cmp-cell ${classB}">${valB!=null?`${valB}<span style="font-size:10px;font-weight:400;color:var(--text-muted);margin-left:2px">${f.unit}</span>`:'—'}</div>
+    </div>`;
+  });
+
+  document.getElementById('cmp-rows').innerHTML=rows;
+  const table=document.getElementById('cmp-table');
+  table.style.display='block';
+  table.scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('cmp-reset-btn').style.display='flex';
+}
+
+function showCmpError(msg){document.getElementById('cmp-error-msg').textContent=msg;document.getElementById('cmp-error').style.display='block';}
+
+function resetCompare(){
+  cmpData=[null,null];
+  [0,1].forEach(i=>{
+    const body=document.getElementById(`slot-body-${i}`);
+    body.innerHTML=`<p class="cmp-empty">Nog leeg</p><button class="cmp-scan-btn" onclick="openCamModal(${i})">Scan product</button>`;
+    document.getElementById(`clear-${i}`).style.display='none';
+  });
+  document.getElementById('cmp-table').style.display='none';
+  document.getElementById('cmp-reset-btn').style.display='none';
+  document.getElementById('cmp-error').style.display='none';
+  modalLastScan='';modalLastScanTime=0;
+}
+
+// Sluit modal bij klik buiten
+document.getElementById('cam-modal').addEventListener('click',function(e){
+  if(e.target===this)closeCamModal();
 });
 </script>
 </body>
